@@ -52,35 +52,34 @@ public class Server {
 
     private static void uploadFile(HttpExchange httpExchange) {
         // Get the fileName
-        String randomString = UUID.randomUUID().toString();
-        String fileName = randomString + httpExchange.getRequestHeaders().get("fileName").get(0).trim();
-        File file = new File("src/uploads/" + fileName);
-        try {
-            boolean b = file.createNewFile();
-            if (b) System.out.println("Created the file " + file.getAbsolutePath());
-            InputStream dataIn = httpExchange.getRequestBody();
-            BufferedInputStream bufferedInputStream = new BufferedInputStream(dataIn);
-            BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(file));
+        new Thread(() -> {
+            String randomString = UUID.randomUUID().toString();
+            String fileName = randomString + httpExchange.getRequestHeaders().get("fileName").get(0).trim();
+            File file = new File("src/uploads/" + fileName);
+            try {
+                boolean b = file.createNewFile();
+                if (b) System.out.println("Created the file " + file.getAbsolutePath());
+                InputStream dataIn = httpExchange.getRequestBody();
+                BufferedInputStream bufferedInputStream = new BufferedInputStream(dataIn,8192);
+                BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(file),8192);
 
-            while (true) {
-                byte[] buffer = new byte[8192];
-                int readBytes = bufferedInputStream.read(buffer);
-                if (readBytes != buffer.length) {
-                    bufferedOutputStream.write(getByteArray(buffer, readBytes));
-                    bufferedOutputStream.flush();
-                    break;
-                }
-                bufferedOutputStream.write(buffer);
-                bufferedOutputStream.flush();
+                int contentLength = Integer.parseInt(httpExchange.getRequestHeaders().get("Content-Length").get(0).trim());
+                BufferedPipeStream bufferedPipeStream = new BufferedPipeStream(bufferedInputStream,bufferedOutputStream,contentLength);
+                bufferedPipeStream.transfer();
+
+
+                String response = "DONE";
+                httpExchange.sendResponseHeaders(200, response.getBytes().length);
+                httpExchange.getResponseBody().write(response.getBytes());
+                httpExchange.getResponseBody().flush();
+
+                bufferedInputStream.close();
+                bufferedOutputStream.close();
+
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-
-            httpExchange.sendResponseHeaders(200, 0);
-            bufferedInputStream.close();
-            bufferedOutputStream.close();
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        }).start();
     }
 
     public static void main(String[] args) throws IOException {
