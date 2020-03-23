@@ -9,6 +9,7 @@ public class Server {
     private static final String ROOT = "src/web/index.html";
     private static final String ROOT_CSS = "src/web/style.css";
     private static final String ROOT_JS = "src/web/app.js";
+    private static String folderPath = "C:/Users/user/Desktop/Uploads/";
 
     private static int getFileSize(String fileName) {
         return (int) new File(fileName).length();
@@ -43,19 +44,12 @@ public class Server {
         dataOut.flush();
         dataOut.close();
     }
-
-    private static byte[] getByteArray(byte[] data, int length) {
-        byte[] result = new byte[length];
-        System.arraycopy(data, 0, result, 0, length);
-        return result;
-    }
-
     private static void uploadFile(HttpExchange httpExchange) {
         // Get the fileName
         new Thread(() -> {
             String randomString = UUID.randomUUID().toString();
             String fileName = randomString + httpExchange.getRequestHeaders().get("fileName").get(0).trim();
-            File file = new File("src/uploads/" + fileName);
+            File file = new File(folderPath + fileName);
             try {
                 boolean b = file.createNewFile();
                 if (b) System.out.println("Created the file " + file.getAbsolutePath());
