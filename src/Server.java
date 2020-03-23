@@ -75,6 +75,7 @@ public class Server {
 
                 bufferedInputStream.close();
                 bufferedOutputStream.close();
+                httpExchange.getResponseBody().close();
 
             } catch (IOException e) {
                 e.printStackTrace();
